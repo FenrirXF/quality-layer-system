@@ -1,0 +1,78 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Microsoft YaHei", Arial, sans-serif;
+  background: #f0f2f5;
+}
+
+#app {
+  width: 100%;
+  height: 100vh;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f7fa;
+}
+
+/* 通用卡片 */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 16px;
+}
+
+/* 筛选区 */
+.filter-bar {
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 操作栏 */
+.action-bar {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+/* 统计卡片 */
+.stat-card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+.stat-card .stat-num {
+  font-size: 32px;
+  font-weight: 700;
+  color: #409eff;
+  margin-top: 8px;
+}
+.stat-card .stat-label {
+  font-size: 14px;
+  color: #909399;
+}

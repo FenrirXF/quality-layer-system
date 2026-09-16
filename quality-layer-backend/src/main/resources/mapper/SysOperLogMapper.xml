@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quality.mapper.SysOperLogMapper">
+    <resultMap id="LogResult" type="SysOperLog">
+        <id column="id" property="id"/>
+        <result column="operator" property="operator"/>
+        <result column="operate_time" property="operateTime"/>
+        <result column="ip" property="ip"/>
+        <result column="org" property="org"/>
+        <result column="module" property="module"/>
+        <result column="action" property="action"/>
+        <result column="content" property="content"/>
+    </resultMap>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_oper_log(operator,operate_time,ip,org,module,action,content)
+        VALUES(#{operator},#{operateTime},#{ip},#{org},#{module},#{action},#{content})
+    </insert>
+    <select id="selectList" resultMap="LogResult">
+        SELECT * FROM sys_oper_log
+        <where>
+            <if test="operator != null and operator != ''">operator LIKE CONCAT('%',#{operator},'%')</if>
+            <if test="module != null and module != ''">module = #{module}</if>
+            <if test="startTime != null and startTime != '' and endTime != null and endTime != ''">
+                operate_time BETWEEN #{startTime} AND #{endTime}
+            </if>
+        </where>
+        ORDER BY operate_time DESC
+    </select>
+    <select id="selectById" resultType="com.quality.entity.SysOperLog">
+        SELECT * FROM sys_oper_log WHERE id = #{id}
+    </select>
+</mapper>

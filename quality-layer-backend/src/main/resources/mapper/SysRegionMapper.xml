@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quality.mapper.SysRegionMapper">
+    <resultMap id="RegionResult" type="SysRegion">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="tech_manager" property="techManager"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <!-- 新增统计字段映射 -->
+        <result column="userCount" property="userCount"/>
+        <result column="reqCount" property="reqCount"/>
+    </resultMap>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_region(name,tech_manager,status,create_time)
+        VALUES(#{name},#{techManager},#{status},#{createTime})
+    </insert>
+    <select id="selectById" resultMap="RegionResult">
+        SELECT * FROM sys_region WHERE id = #{id}
+    </select>
+    <select id="selectByName" resultMap="RegionResult">
+        SELECT * FROM sys_region WHERE name = #{name}
+    </select>
+    <select id="selectList" resultMap="RegionResult">
+        SELECT
+        r.*,
+        COUNT(DISTINCT u.id) AS userCount,
+        COUNT(DISTINCT req.id) AS reqCount
+        FROM sys_region r
+        LEFT JOIN sys_user u ON u.region = r.name
+        LEFT JOIN req_requirement req ON req.region = r.name
+        <where>
+            <if test="name != null and name != ''">r.name LIKE CONCAT('%',#{name},'%')</if>
+            <if test="status != null">r.status = #{status}</if>
+        </where>
+        GROUP BY r.id
+        ORDER BY r.id ASC
+    </select>
+    <select id="selectAll" resultType="com.quality.entity.SysRegion">
+        SELECT id, name FROM sys_region
+    </select>
+    <select id="selectEnableRegion" resultType="com.quality.entity.SysRegion">
+        SELECT id, name, tech_manager, status, create_time
+        FROM sys_region
+        WHERE status = 1
+        ORDER BY name ASC
+    </select>
+    <update id="update">
+        UPDATE sys_region SET name=#{name},tech_manager=#{techManager},status=#{status} WHERE id=#{id}
+    </update>
+    <delete id="deleteById">
+        DELETE FROM sys_region WHERE id = #{id}
+    </delete>
+</mapper>

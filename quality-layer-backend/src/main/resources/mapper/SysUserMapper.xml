@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quality.mapper.SysUserMapper">
+
+    <resultMap id="UserResult" type="com.quality.entity.SysUser">
+        <id column="id" property="id"/>
+        <result column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="name" property="name"/>
+        <result column="password" property="password"/>
+        <result column="role" property="role"/>
+        <result column="region" property="region"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 新增用户：动态判断createTime，为空就不传，使用数据库默认时间 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (username, name, password, role, region, status
+        <if test="createTime != null">
+            , create_time
+        </if>
+        )
+        VALUES (#{username}, #{name}, #{password}, #{role}, #{region}, #{status}
+        <if test="createTime != null">
+            , #{createTime}
+        </if>
+        )
+    </insert>
+
+    <!-- 根据id查询 -->
+    <select id="selectById" resultMap="UserResult">
+        SELECT * FROM sys_user WHERE id = #{id}
+    </select>
+
+    <!-- 分页模糊查询 补充 role、region 条件 -->
+    <select id="selectList" resultMap="UserResult">
+        SELECT * FROM sys_user
+        <where>
+            <if test="username != null and username != ''">
+                username LIKE CONCAT('%',#{username},'%')
+            </if>
+            <if test="role != null and role != ''">
+                role = #{role}
+            </if>
+            <if test="region != null and region != ''">
+                region = #{region}
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByUsername" resultMap="UserResult">
+        SELECT * FROM sys_user WHERE username = #{username}
+    </select>
+
+    <!--根据角色查询用户-->
+    <select id="selectByRoleCode" resultMap="UserResult">
+        SELECT * FROM sys_user WHERE role = #{role}
+    </select>
+
+    <!-- 修改用户 -->
+    <update id="update">
+        UPDATE sys_user
+        SET name = #{name},
+            password = #{password},
+            role = #{role},
+            region = #{region},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+    <update id="updateStatus">
+        UPDATE sys_user
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除用户 -->
+    <delete id="deleteById">
+        DELETE FROM sys_user WHERE id = #{id}
+    </delete>
+</mapper>

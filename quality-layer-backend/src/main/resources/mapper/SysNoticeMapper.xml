@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quality.mapper.SysNoticeMapper">
+
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_notice
+        WHERE target_user_id = #{userId} AND is_read = 0
+    </select>
+
+    <select id="listUserNotice" resultType="com.quality.entity.SysNotice">
+        SELECT id,title,content,notice_type,create_time,is_read
+        FROM sys_notice
+        WHERE target_user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+
+    <update id="updateRead">
+        UPDATE sys_notice
+        SET is_read = 1
+        WHERE id = #{id} AND target_user_id = #{userId}
+    </update>
+
+    <insert id="addNotice">
+        INSERT INTO sys_notice(title,content,notice_type,create_time,create_user,target_user_id,is_read)
+        VALUES(#{title},#{content},#{noticeType},NOW(),#{createUser},#{targetUserId},0)
+    </insert>
+</mapper>

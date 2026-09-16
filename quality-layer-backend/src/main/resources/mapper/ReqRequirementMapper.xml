@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.quality.mapper.ReqRequirementMapper">
+    <resultMap id="ReqResult" type="ReqRequirement">
+        <id column="id" property="id"/>
+        <result column="region" property="region"/>
+        <result column="tech_manager" property="techManager"/>
+        <result column="dev_manager" property="devManager"/>
+        <result column="dev_leader" property="devLeader"/>
+        <result column="test_leader" property="testLeader"/>
+        <result column="task_name" property="taskName"/>
+        <result column="trigger_item" property="triggerItem"/>
+        <result column="conclusion" property="conclusion"/>
+        <result column="deadline" property="deadline"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_user" property="createUser"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_user" property="updateUser"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO req_requirement(region,tech_manager,dev_manager,dev_leader,test_leader,task_name,trigger_item,conclusion,deadline,status,remark,create_user,create_time,update_user,update_time)
+        VALUES(#{region},#{techManager},#{devManager},#{devLeader},#{testLeader},#{taskName},#{triggerItem},#{conclusion},#{deadline},#{status},#{remark},#{createUser},#{createTime},#{updateUser},#{updateTime})
+    </insert>
+    <select id="selectById" resultMap="ReqResult">
+        SELECT * FROM req_requirement WHERE id = #{id}
+    </select>
+    <select id="selectList" resultMap="ReqResult">
+        SELECT * FROM req_requirement
+        <where>
+            <if test="region != null and region != ''">region = #{region}</if>
+            <if test="status != null and status != ''">status = #{status}</if>
+            <if test="taskName != null and taskName != ''">task_name LIKE CONCAT('%',#{taskName},'%')</if>
+        </where>
+    </select>
+    <select id="selectStatByRegion" resultType="java.util.Map">
+        SELECT
+            region AS regionName,
+            COUNT(id) AS count
+        FROM req_requirement
+        GROUP BY region
+        ORDER BY count DESC
+    </select>
+    <select id="selectStatTotal" resultType="java.util.Map">
+        SELECT
+            COUNT(id) AS totalAll,
+            SUM(CASE WHEN DATE_FORMAT(create_time,'%Y-%m') = DATE_FORMAT(NOW(),'%Y-%m') THEN 1 ELSE 0 END) AS monthNew,
+            SUM(CASE WHEN conclusion = '测试团队介入保障' THEN 1 ELSE 0 END) AS testJoinTotal,
+            SUM(CASE WHEN conclusion = '研发自测负责' THEN 1 ELSE 0 END) AS devSelfTotal
+        FROM req_requirement
+        WHERE create_time IS NOT NULL
+    </select>
+    <select id="selectStatByMonth" resultType="java.util.Map">
+        SELECT DATE_FORMAT(create_time, '%m')                               AS month,
+               COUNT(id)                                                    AS total,
+               SUM(CASE WHEN conclusion = '测试团队介入保障' THEN 1 ELSE 0 END)     AS testJoin,
+               SUM(CASE WHEN conclusion = '研发自测负责' THEN 1 ELSE 0 END) AS devSelfTest
+        FROM req_requirement
+        WHERE create_time IS NOT NULL
+          AND DATE_FORMAT(create_time, '%Y') = #{year}
+        GROUP BY DATE_FORMAT(create_time, '%m')
+        ORDER BY month
+    </select>
+    <select id="selectAllForExport" resultType="com.quality.entity.ReqRequirement">
+        SELECT * FROM req_requirement
+        <where>
+            <if test="region != null and region != ''">
+                region = #{region}
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+            <if test="taskName != null and taskName != ''">
+                task_name LIKE CONCAT('%',#{taskName},'%')
+            </if>
+        </where>
+    </select>
+    <select id="selectRecent" resultType="com.quality.entity.ReqRequirement">
+        SELECT * FROM req_requirement
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+    <select id="selectExportList" resultType="com.quality.entity.ReqRequirement">
+        SELECT
+        region,
+        tech_manager,
+        dev_manager,
+        dev_leader,
+        test_leader,
+        task_name,
+        trigger_item,
+        conclusion,
+        deadline,
+        status,
+        remark
+        FROM req_requirement
+        <where>
+            <if test="region != null and region != ''">
+                region = #{region}
+            </if>
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+            <if test="taskName != null and taskName != ''">
+                task_name LIKE CONCAT('%',#{taskName},'%')
+            </if>
+        </where>
+    </select>
+    <update id="update">
+        UPDATE req_requirement
+        SET region=#{region},tech_manager=#{techManager},dev_manager=#{devManager},dev_leader=#{devLeader},test_leader=#{testLeader},
+            task_name=#{taskName},trigger_item=#{triggerItem},conclusion=#{conclusion},deadline=#{deadline},status=#{status},remark=#{remark},
+            update_user=#{updateUser},update_time=#{updateTime}
+        WHERE id=#{id}
+    </update>
+    <select id="statDimension" resultType="java.util.Map">
+        SELECT
+        ${groupField} AS groupName,
+        COUNT(*) AS total,
+        SUM(CASE WHEN conclusion = '测试团队介入保障' THEN 1 ELSE 0 END) AS testJoin,
+        SUM(CASE WHEN conclusion = '研发自测负责' THEN 1 ELSE 0 END) AS devSelf,
+        GROUP_CONCAT(DISTINCT
+        CASE
+        WHEN trigger_item LIKE '%：%' THEN SUBSTRING_INDEX(trigger_item, '：', 1)
+        WHEN trigger_item LIKE '%:%' THEN SUBSTRING_INDEX(trigger_item, ':', 1)
+        WHEN trigger_item LIKE '% %' THEN SUBSTRING_INDEX(trigger_item, ' ', 1)
+        ELSE trigger_item
+        END
+        ) AS triggerItems
+        FROM req_requirement
+        <where>
+            1=1
+            <if test="startDate != null and startDate != ''">
+                DATE(create_time) &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                DATE(create_time) &lt;= #{endDate}
+            </if>
+            <if test="region != null and region != ''">
+                AND region = #{region}
+            </if>
+            <if test="conclusion != null and conclusion != ''">
+                AND conclusion = #{conclusion}
+            </if>
+        </where>
+        GROUP BY ${groupField}
+    </select>
+    <select id="selectAllRegion" resultType="java.lang.String">
+        SELECT DISTINCT region FROM req_requirement WHERE region IS NOT NULL AND region != ''
+    </select>
+    <delete id="deleteById">
+        DELETE FROM req_requirement WHERE id = #{id}
+    </delete>
+</mapper>

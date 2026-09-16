@@ -1,0 +1,27 @@
+# ===== 前端 quality_layer_frontend Vue3 Vite =====
+quality_layer_frontend/node_modules/
+quality_layer_frontend/dist/
+quality_layer_frontend/.vscode/
+quality_layer_frontend/.idea/
+quality_layer_frontend/*.log
+quality_layer_frontend/.env.local
+quality_layer_frontend/.env
+quality_layer_frontend/.env.*.local
+quality_layer_frontend/coverage/
+
+# ===== 后端 quality-layer-backend SpringBoot =====
+quality-layer-backend/target/
+quality-layer-backend/.idea/
+quality-layer-backend/.mvn/wrapper/maven-wrapper.jar
+quality-layer-backend/*.log
+quality-layer-backend/logs/
+quality-layer-backend/heapdump.*
+quality-layer-backend/application-dev.yml
+quality-layer-backend/quality-admin/node_modules/
+quality-layer-backend/quality-admin/dist/
+
+# ===== 通用 =====
+*.log
+.DS_Store
+Thumbs.db
+.idea/
