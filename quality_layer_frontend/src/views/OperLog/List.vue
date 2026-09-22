@@ -11,6 +11,14 @@
           prefix-icon="Search"
           @keyup.enter="getLogList"
         />
+        <el-input
+          v-model="searchParams.ip"
+          placeholder="搜索IP地址"
+          clearable
+          style="width:220px"
+          prefix-icon="Search"
+          @keyup.enter="getLogList"
+        />
         <el-select
           v-model="searchParams.module"
           placeholder="全部模块"
@@ -63,7 +71,7 @@
           {{ row.operateTime ? row.operateTime.replace('T',' ') : '' }}
         </template>
       </el-table-column>
-      <el-table-column prop="ip" label="IP地址" width="140" />
+      <el-table-column prop="ip" label="IP地址" width="160" show-overflow-tooltip />
       <el-table-column prop="org" label="所属机构" width="120" />
       <el-table-column prop="module" label="系统模块" width="110">
         <template #default="{ row }">
@@ -108,6 +116,7 @@ const searchParams = reactive({
   pageNum: 1,
   pageSize: 10,
   operator: '',
+  ip: '',
   module: '',
   startTime: '',
   endTime: ''
@@ -147,6 +156,7 @@ const handlePageChange = (val) => {
 const resetSearch = () => {
   searchParams.pageNum = 1
   searchParams.operator = ''
+  searchParams.ip = ''
   searchParams.module = ''
   searchParams.startTime = ''
   searchParams.endTime = ''

@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/quality_layer?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&zeroDateTimeBehavior=convertToNull
+    username: root
+    # 请在 application.yml 中设置实际密码
+    password: ${DB_PASSWORD:}
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.quality.entity
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+
+logging:
+  level:
+    com.quality: debug
+    org.springframework: debug
+    org.springframework.jdbc: debug
+    org.mybatis: debug
+
+server:
+  port: 8081

@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import axios from 'axios'
 
 const routes = [
   {
@@ -38,58 +37,23 @@ const router = createRouter({
   routes
 })
 
-// 全局守卫：【调试开关】true=直接跳过登录，false=正常登录流程
-const SKIP_LOGIN_DEBUG = false;
-
-router.beforeEach(async (to, from, next) => {
-  // 调试模式：直接模拟管理员登录状态
-  if (SKIP_LOGIN_DEBUG) {
-    // 模拟admin管理员数据，适配权限判断
-    localStorage.setItem('token', 'debug-admin-token');
-    localStorage.setItem('userInfo', JSON.stringify({
-      username: 'admin',
-      role: 'admin',
-      name: '超级管理员'
-    }));
-    // 访问登录页直接跳转首页
-    if (to.path === '/login') {
-      next('/home');
-    } else {
-      next();
-    }
-    return;
-  }
-
-  // ========== 下面是你原本正常的登录逻辑（关闭调试模式生效） ==========
+router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
+
+  // 访问登录页，如果有token直接跳转首页
   if (to.path === '/login') {
-    next()
+    if (token) {
+      next('/home')
+    } else {
+      next()
+    }
     return
   }
 
-  // 没有token → 执行免密登录
+  // 访问其他页面，没有token跳转登录页
   if (!token) {
-    try {
-      // 请求后端免密接口
-      const res = await axios.get('/api/test/freeLogin')
-      if (res.code === 200) {
-        // 和正常登录逻辑保持一致：存储token、用户信息
-        localStorage.setItem('token', res.data.token)
-        localStorage.setItem('userInfo', JSON.stringify(res.data.user))
-        // 重新放行目标页面
-        next(to.path)
-        return
-      } else {
-        // 免密失败，跳转登录页
-        ElMessage.error('自动登录失败，请手动登录')
-        next('/login')
-        return
-      }
-    } catch (err) {
-      ElMessage.error('服务连接异常，跳转登录')
-      next('/login')
-      return
-    }
+    next('/login')
+    return
   }
 
   // 获取登录用户信息

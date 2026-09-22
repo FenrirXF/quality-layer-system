@@ -64,34 +64,6 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
-          <!-- 消息通知 -->
-          <el-popover placement="bottom-end" width="360" trigger="click" @show="loadNotificationList">
-            <template #reference>
-              <el-badge :value="unreadCount" :max="99" class="notify-badge">
-                <el-icon :size="20" class="notify-icon"><Bell /></el-icon>
-              </el-badge>
-            </template>
-            <div class="notify-panel">
-              <div class="notify-header">
-                <span class="notify-title">消息通知</span>
-                <el-button link size="small" @click="markAllRead">全部已读</el-button>
-              </div>
-              <div class="notify-list">
-                <div
-                  v-for="item in notificationList"
-                  :key="item.id"
-                  class="notify-item"
-                  :class="{ unread: item.isRead === 0 }"
-                  @click="handleClickNotify(item)"
-                >
-                  <div class="notify-text">{{ item.title }}</div>
-                  <div class="notify-time">{{ item.createTime }}</div>
-                </div>
-                <div v-if="notificationList.length === 0" class="notify-empty">暂无消息</div>
-              </div>
-            </div>
-          </el-popover>
-
           <!-- 用户下拉 -->
           <el-dropdown @command="handleCommand">
             <span class="user-info">
@@ -149,9 +121,8 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { updatePwdApi } from '@/api/user'
-import { getNoticeUnreadApi, getNoticeListApi, markNoticeReadApi } from '@/api/notice'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Document, DataAnalysis, Setting, Fold, Expand, ArrowDown, Bell } from '@element-plus/icons-vue'
+import { HomeFilled, Document, DataAnalysis, Setting, Fold, Expand, ArrowDown } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -161,32 +132,6 @@ const userStore = useUserStore()
 const isCollapse = ref(false)
 const activeMenu = computed(() => route.path)
 
-// 通知相关
-const notificationList = ref([])
-const unreadCount = ref(0)
-
-// 加载未读数量
-const loadNoticeCount = async () => {
-  try{
-    const res = await getNoticeUnreadApi()
-    unreadCount.value = res.data
-  }catch(e){
-    console.log('通知服务暂不可用')
-  }
-}
-
-// 加载通知列表（弹窗打开触发）
-const loadNotificationList = async () => {
-  try {
-    const res = await getNoticeListApi()
-    if (res.code === 200) {
-      notificationList.value = res.data
-    }
-  } catch (err) {
-    console.log('通知列表加载失败', err)
-    notificationList.value = []
-  }
-}
 
 // 点击单条通知，标记已读
 const handleClickNotify = async (item) => {
@@ -266,9 +211,7 @@ const handleUpdatePwd = async () => {
 }
 
 onMounted(() => {
-  loadNoticeCount()
-  // 定时轮询刷新红点（30秒）
-  setInterval(() => loadNoticeCount(), 30000)
+  // 页面初始化
 })
 </script>
 
@@ -328,55 +271,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 20px;
-}
-.notify-badge {
-  cursor: pointer;
-}
-.notify-icon {
-  color: #606266;
-}
-.notify-panel {
-  width: 360px;
-}
-.notify-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #ebeef5;
-}
-.notify-title {
-  font-weight: 600;
-  font-size: 14px;
-}
-.notify-list {
-  max-height: 320px;
-  overflow-y: auto;
-}
-.notify-item {
-  padding: 12px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f2f5;
-}
-.notify-item:hover {
-  background: #f5f7fa;
-}
-.notify-item.unread .notify-text {
-  font-weight: 600;
-}
-.notify-text {
-  font-size: 14px;
-  color: #303133;
-  margin-bottom: 4px;
-}
-.notify-time {
-  font-size: 12px;
-  color: #c0c4cc;
-}
-.notify-empty {
-  padding: 30px;
-  text-align: center;
-  color: #909399;
 }
 .user-info {
   display: flex;

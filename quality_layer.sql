@@ -134,23 +134,6 @@ CREATE TABLE `sys_oper_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='操作日志表';
 
 -- =====================================================================
--- 9. 公告表（实体：SysNotice）
--- =====================================================================
-DROP TABLE IF EXISTS `sys_notice`;
-CREATE TABLE `sys_notice` (
-  `id`             BIGINT       NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `title`          VARCHAR(128) DEFAULT NULL COMMENT '公告标题',
-  `content`        TEXT         COMMENT '公告内容',
-  `notice_type`    VARCHAR(32)  DEFAULT NULL COMMENT '公告类型',
-  `create_time`    DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `create_user`    VARCHAR(64)  DEFAULT NULL COMMENT '创建人',
-  `target_user_id` BIGINT       DEFAULT NULL COMMENT '目标用户ID',
-  `is_read`        INT          DEFAULT 0 COMMENT '是否已读：0未读 1已读',
-  PRIMARY KEY (`id`),
-  KEY `idx_notice_target` (`target_user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='公告表';
-
--- =====================================================================
 -- 10. 初始化数据
 -- =====================================================================
 
@@ -177,10 +160,19 @@ INSERT INTO `sys_permission` (`id`, `label`, `parent_id`, `type`) VALUES
 INSERT INTO `sys_role_permission` (`role_id`, `permission_id`) VALUES
 (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7);
 
+-- 10.6 示例用户数据（安徽区域）
+INSERT INTO `sys_user` (`username`, `name`, `password`, `role`, `region`, `status`)
+VALUES
+('chuzhuoting', '褚卓霆', '$2a$10$isyRbUdwwGasAbw83fnD2e3c9.MOWyhdGlg6XxADqrfegYYuheQ2G', 'user', '安徽', 1),
+('zhangjie', '张杰', '$2a$10$isyRbUdwwGasAbw83fnD2e3c9.MOWyhdGlg6XxADqrfegYYuheQ2G', 'user', '芜湖', 1);
+
 -- 10.5 示例区域（占位数据，请按实际区域名称修改后使用）
 INSERT INTO `sys_region` (`name`, `tech_manager`, `status`) VALUES
-('区域一', '张三', 1),
-('区域二', '李四', 1);
+('安徽', '张三', 1),
+('芜湖', '李四', 1),
+('合肥', '王五', 1),
+('蚌埠', '赵六', 1),
+('阜阳', '孙七', 1);
 
 -- =====================================================================
 -- 11. 样例需求数据（可选，便于首次启动看到页面效果；不需要可删除）

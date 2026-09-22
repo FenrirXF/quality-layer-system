@@ -18,9 +18,9 @@ public class SysOperLogController {
     public Result<PageInfo<SysOperLog>> page(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
-           String operator, String module, String startTime, String endTime
+           String operator, String ip, String module, String startTime, String endTime
     ) {
-        PageInfo<SysOperLog> page = sysOperLogService.pageList(pageNum, pageSize, operator, module, startTime, endTime);
+        PageInfo<SysOperLog> page = sysOperLogService.pageList(pageNum, pageSize, operator, ip, module, startTime, endTime);
         return Result.success(page);
     }
 

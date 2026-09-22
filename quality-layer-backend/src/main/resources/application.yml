@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/quality_layer?useUnicode=true&amp;characterEncoding=utf8&amp;serverTimezone=Asia/Shanghai&amp;allowMultiQueries=true&amp;allowPublicKeyRetrieval=true&amp;useSSL=false&amp;zeroDateTimeBehavior=convertToNull
+    url: jdbc:mysql://127.0.0.1:3306/quality_layer?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&zeroDateTimeBehavior=convertToNull
     username: root
-    password: xxx
+    password: 20070809XXFxxf
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -19,7 +19,10 @@ pagehelper:
 
 logging:
   level:
-    org.springframework.jdbc.support.JdbcTransactionManager: debug
+    com.quality: debug
+    org.springframework: debug
+    org.springframework.jdbc: debug
+    org.mybatis: debug
 
 server:
   port: 8081

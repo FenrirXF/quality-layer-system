@@ -6,6 +6,7 @@ import java.util.List;
 public interface SysOperLogMapper {
     int insert(SysOperLog log);
     List<SysOperLog> selectList(@Param("operator") String operator,
+                                @Param("ip") String ip,
                                 @Param("module") String module,
                                 @Param("startTime") String startTime,
                                 @Param("endTime") String endTime);

@@ -19,6 +19,7 @@
         SELECT * FROM sys_oper_log
         <where>
             <if test="operator != null and operator != ''">operator LIKE CONCAT('%',#{operator},'%')</if>
+            <if test="ip != null and ip != ''">ip = #{ip}</if>
             <if test="module != null and module != ''">module = #{module}</if>
             <if test="startTime != null and startTime != '' and endTime != null and endTime != ''">
                 operate_time BETWEEN #{startTime} AND #{endTime}

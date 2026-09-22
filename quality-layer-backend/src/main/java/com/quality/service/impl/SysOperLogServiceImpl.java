@@ -20,9 +20,9 @@ public class SysOperLogServiceImpl implements SysOperLogService {
     }
 
     @Override
-    public PageInfo<SysOperLog> pageList(Integer pageNum, Integer pageSize, String operator, String module, String startTime, String endTime) {
+    public PageInfo<SysOperLog> pageList(Integer pageNum, Integer pageSize, String operator, String ip, String module, String startTime, String endTime) {
         PageHelper.startPage(pageNum, pageSize);
-        List<SysOperLog> list = sysOperLogMapper.selectList(operator, module, startTime, endTime);
+        List<SysOperLog> list = sysOperLogMapper.selectList(operator, ip, module, startTime, endTime);
         return new PageInfo<>(list);
     }
 

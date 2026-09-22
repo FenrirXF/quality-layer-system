@@ -24,7 +24,7 @@ public class SysUserServiceImpl implements SysUserService {
     private ReqRequirementMapper reqRequirementMapper;
 
     @Autowired
-    private org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder passwordEncoder;
+    private com.quality.util.BCryptUtil bCryptUtil;
 
     @Override
     public int add(SysUser sysUser) {
@@ -81,7 +81,7 @@ public class SysUserServiceImpl implements SysUserService {
         SysUser user = new SysUser();
         user.setUsername(vo.getUsername());
         user.setName(vo.getName());
-        user.setPassword(passwordEncoder.encode(vo.getPassword()));
+        user.setPassword(bCryptUtil.encrypt(vo.getPassword()));
         user.setRole("regional");
         user.setRegion(vo.getRegion());
         user.setStatus(1);

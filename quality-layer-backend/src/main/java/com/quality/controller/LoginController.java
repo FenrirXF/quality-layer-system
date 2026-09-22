@@ -61,7 +61,7 @@ public class LoginController {
 
         loginVO.setUser(userVO);
 
-        // ============ 登录成功，记录操作日志 ============
+        // 记录操作日志
         OperLogUtil.record(sysOperLogService, request, user,
                 "系统登录", "登录", user.getName() + "账号登录系统");
 

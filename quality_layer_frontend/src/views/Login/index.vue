@@ -71,8 +71,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { ElMessage } from 'element-plus'
 // 导入接口
-import { loginApi } from '@/api/login'
-import { registerApi } from '@/api/user'
+import { loginApi, registerApi } from '@/api/user'
 
 const router = useRouter()
 const userStore = useUserStore()
