@@ -13,6 +13,9 @@ import com.quality.util.OperLogUtil;
 import com.quality.util.ThreadLocalUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import cn.hutool.json.JSONUtil;
+import java.util.concurrent.TimeUnit;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,6 +32,9 @@ public class LoginController {
 
     @Autowired
     private SysOperLogService sysOperLogService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @PostMapping("/login")
     public Result<LoginVO> login(@Validated @RequestBody LoginDTO loginDTO, HttpServletRequest request) {
@@ -48,6 +54,12 @@ public class LoginController {
         }
         // 生成token返回
         String token = JwtUtil.generateToken(user.getUsername(), user.getRole(), user.getRegion());
+        // 存 token（字符串），2小时过期，和 JWT 有效期一致
+        stringRedisTemplate.opsForValue().set(
+                "login:token:" + user.getUsername(), token, 2, TimeUnit.HOURS);
+        // 存用户信息（JSON字符串），2小时过期，拦截器从这里取，不用每次查库
+        stringRedisTemplate.opsForValue().set(
+                "login:user:" + user.getUsername(), JSONUtil.toJsonStr(user), 2, TimeUnit.HOURS);
 
         // 组装VO返回token与用户信息
         LoginVO loginVO = new LoginVO();
@@ -71,8 +83,14 @@ public class LoginController {
     //登出
     @PostMapping("/logout")
     public Result<String> logout() {
-        // 清除ThreadLocal中保存的登录用户信息
+        // 从 ThreadLocal 拿当前登录用户
+        SysUser loginUser = ThreadLocalUtil.getLoginUser();
+        if (loginUser != null) {
+            // 删除 Redis 会话 → token 立即失效
+            stringRedisTemplate.delete("login:token:" + loginUser.getUsername());
+            stringRedisTemplate.delete("login:user:" + loginUser.getUsername());
+        }
         ThreadLocalUtil.remove();
-        return Result.success("登出成功，请清除本地token");
+        return Result.success("登出成功");
     }
 }

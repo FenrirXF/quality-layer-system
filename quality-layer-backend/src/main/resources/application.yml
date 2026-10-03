@@ -4,6 +4,13 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/quality_layer?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowMultiQueries=true&allowPublicKeyRetrieval=true&useSSL=false&zeroDateTimeBehavior=convertToNull
     username: root
     password: xxx
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+      password:            # 你的Redis没设密码就留空；设了密码就填 "你的密码"
+      timeout: 10s
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml

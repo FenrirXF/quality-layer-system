@@ -1,5 +1,7 @@
 package com.quality.service.impl;
 
+import cn.hutool.core.lang.TypeReference;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.write.style.column.LongestMatchColumnWidthStyleStrategy;
 import com.github.pagehelper.PageHelper;
@@ -12,6 +14,7 @@ import com.quality.service.ReqRequirementService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,10 +23,8 @@ import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,17 +33,60 @@ public class ReqRequirementServiceImpl implements ReqRequirementService {
     @Autowired
     private ReqRequirementMapper reqRequirementMapper;
 
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    // 清理所有首页统计缓存（新增/修改/删除需求后调用）
+    private void clearStatsCache() {
+        stringRedisTemplate.delete("stat:total");
+        stringRedisTemplate.delete("stat:region");
+        // month / recent 的 key 带参数，用通配符批量删
+        Set<String> monthKeys = stringRedisTemplate.keys("stat:month:*");
+        if (monthKeys != null && !monthKeys.isEmpty()) {
+            stringRedisTemplate.delete(monthKeys);
+        }
+        Set<String> recentKeys = stringRedisTemplate.keys("stat:recent:*");
+        if (recentKeys != null && !recentKeys.isEmpty()) {
+            stringRedisTemplate.delete(recentKeys);
+        }
+    }
+
     @Override
     public int add(ReqRequirement reqRequirement) {
         LocalDateTime now = LocalDateTime.now();
         reqRequirement.setCreateTime(now);
         reqRequirement.setUpdateTime(now);
-        return reqRequirementMapper.insert(reqRequirement);
+        int rows = reqRequirementMapper.insert(reqRequirement);
+
+        // ===== 新增：首页统计缓存全部失效 =====
+        clearStatsCache();
+        return rows;
     }
 
     @Override
     public ReqRequirement getById(Long id) {
-        return reqRequirementMapper.selectById(id);
+        String key = "requirement:detail:" + id;
+
+        // ① 先查缓存
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json != null) {
+            // 空字符串 = 之前查过数据库没有这条（防穿透的空值标记），直接返回 null
+            if (json.isEmpty()) {
+                return null;
+            }
+            return JSONUtil.toBean(json, ReqRequirement.class);   // JSON → 实体
+        }
+
+        // ② 缓存未命中 → 查数据库
+        ReqRequirement req = reqRequirementMapper.selectById(id);
+
+        // ③ 回填缓存：有数据存10分钟；没数据存空串2分钟（防止频繁查不存在的id，即缓存穿透）
+        if (req != null) {
+            stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(req), 10, TimeUnit.MINUTES);
+        } else {
+            stringRedisTemplate.opsForValue().set(key, "", 2, TimeUnit.MINUTES);
+        }
+        return req;
     }
 
     @Override
@@ -54,14 +98,26 @@ public class ReqRequirementServiceImpl implements ReqRequirementService {
 
     @Override
     public int update(ReqRequirement reqRequirement) {
-        // 修改只更新修改时间
         reqRequirement.setUpdateTime(LocalDateTime.now());
-        return reqRequirementMapper.update(reqRequirement);
+        int rows = reqRequirementMapper.update(reqRequirement);
+
+        // ===== 新增：删这条需求的详情缓存 =====
+        if (reqRequirement.getId() != null) {
+            stringRedisTemplate.delete("requirement:detail:" + reqRequirement.getId());
+        }
+        // ===== 新增：首页统计缓存失效 =====
+        clearStatsCache();
+        return rows;
     }
 
     @Override
     public int deleteById(Long id) {
-        return reqRequirementMapper.deleteById(id);
+        int rows = reqRequirementMapper.deleteById(id);
+
+        // ===== 新增 =====
+        stringRedisTemplate.delete("requirement:detail:" + id);
+        clearStatsCache();
+        return rows;
     }
 
     @Override
@@ -74,12 +130,27 @@ public class ReqRequirementServiceImpl implements ReqRequirementService {
             item.setUpdateTime(now);
             total += reqRequirementMapper.insert(item);
         }
+
+        // ===== 新增 =====
+        clearStatsCache();
         return total;
     }
 
     @Override
     public List<Map<String, Object>> statGroupByRegion() {
-        return reqRequirementMapper.selectStatByRegion();
+        String key = "stat:region";
+
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json != null) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> data = (List<Map<String, Object>>) (List<?>) JSONUtil.toList(json, Map.class);
+            return data;
+        }
+
+        List<Map<String, Object>> data = reqRequirementMapper.selectStatByRegion();   // 原有逻辑
+
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(data), 5, TimeUnit.MINUTES);
+        return data;
     }
 
     @Override
@@ -87,7 +158,19 @@ public class ReqRequirementServiceImpl implements ReqRequirementService {
         if (year == null || year <= 0) {
             year = java.time.Year.now().getValue();
         }
-        return reqRequirementMapper.selectStatByMonth(year);
+        String key = "stat:month:" + year;   // 不同年份互不干扰
+
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json != null) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> monthStat = (List<Map<String, Object>>) (List<?>) JSONUtil.toList(json, Map.class);
+            return monthStat;
+        }
+
+        List<Map<String, Object>> monthStat = reqRequirementMapper.selectStatByMonth(year);
+
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(monthStat), 5, TimeUnit.MINUTES);
+        return monthStat;
     }
 
     @Override
@@ -111,12 +194,32 @@ public class ReqRequirementServiceImpl implements ReqRequirementService {
 
     @Override
     public Map<String, Object> statTotal() {
-        return reqRequirementMapper.selectStatTotal();
+        String key = "stat:total";
+
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json != null) {
+            return JSONUtil.toBean(json, Map.class);
+        }
+
+        Map<String, Object> map = reqRequirementMapper.selectStatTotal();   // 你原有逻辑
+
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(map), 5, TimeUnit.MINUTES);
+        return map;
     }
 
     @Override
     public List<ReqRequirement> selectRecent(Integer pageSize) {
-        return reqRequirementMapper.selectRecent(pageSize);
+        String key = "stat:recent:" + pageSize;
+
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json != null) {
+            return JSONUtil.toList(json, ReqRequirement.class);
+        }
+
+        List<ReqRequirement> list = reqRequirementMapper.selectRecent(pageSize);   // 原有逻辑
+
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(list), 5, TimeUnit.MINUTES);
+        return list;
     }
 
     @Override
